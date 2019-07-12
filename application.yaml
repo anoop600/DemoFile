@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: javaapp
+  namespace: default
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2
+      maxUnavailable: 1
+  revisionHistoryLimit: 4
+  paused: false
+  minReadySeconds: 30
+  selector:
+    matchLabels:
+      app: java
+  template:
+    metadata:
+      name: vote
+      labels:
+        app: java
+    spec:
+      containers:
+        - name: app
+          image: anoop600/crmdemo:5.0
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          env:
+            - name: JDBCURL
+              value: "databaseservice"
+            - name: DATABASEONE
+              value: "web_customer_tracker"
+            - name: DATABASETWO
+              value: "spring_security_demo_bcrypt"
+            - name: USER
+              value: "root"
+            - name: PASSWORD
+              value: "password"
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          resources:
+           requests:
+             memory: "700Mi"
+             cpu: "100m"
+           limits:
+             memory: "1500Mi"
+             cpu: "200m"
+              
+---
+apiVersion: v1
+kind: Service
+metadata:
+    name: javaapp
+    labels: 
+        app: java
+spec:
+    selector: 
+        app: java
+    ports:
+        - port: 80
+          targetPort: 8080
+    type: LoadBalancer
+         
